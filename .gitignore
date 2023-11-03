@@ -1,4 +1,6 @@
-hass_config/*
-mosquitto/log
+.env
+hass-config/*
+mosquitto/log/*
 mosquitto/config/credentials.conf
-mosquitto/data
+mosquitto/data/*
+
