@@ -4,7 +4,7 @@ services:
     container_name: hass
     image: homeassistant/home-assistant
     volumes:
-      - ./hass_config:/config
+      - ./hass-config:/config
       - /etc/localtime:/etc/localtime:ro
       - /run/dbus:/run/dbus:ro
       - /var/run/docker.sock:/var/run/docker.sock
@@ -16,11 +16,9 @@ services:
       timeout: 60s
       retries: 2
     network_mode: host
-    user: "${PUID}:${PGID}"
+    user: "1000:1000"
     depends_on:
       - mosquitto
-  environment:
-      - DISABLE_JEMALLOC: true
   nodered:
     container_name: nodered
     image: nodered/node-red
@@ -34,7 +32,7 @@ services:
     environment:
       TZ: "America/Argentina/Buenos_Aires"
     restart: unless-stopped
-    user: "${PUID}:${PGID}"
+    user: "1000:1000"
   mosquitto:
     image: eclipse-mosquitto
     container_name: mosquitto
@@ -47,7 +45,7 @@ services:
       - "./mosquitto/log:/mosquitto/log"
     environment:
       TZ: "America/Argentina/Buenos_Aires"
-    user: "${PUID}:${PGID}"
+    user: "1000:1000"
   hass-configurator:
     image: "causticlab/hass-configurator-docker:arm"
     container_name: hass-configurator
@@ -59,7 +57,7 @@ services:
     volumes:
       - "./configurator-config:/config"
       - "./hass-config:/hass-config"
-    user: "${PUID}:${PGID}"
+    user: "1000:1000"
   # mariadb:
   #   image: linuxserver/mariadb
   #   container_name: mariadb
