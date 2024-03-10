@@ -1,75 +1,94 @@
-version: '3'
+version: "3"
 services:
   homeassistant:
     container_name: hass
-    image: homeassistant/home-assistant
+    image: homeassistant/home-assistant:latest
     volumes:
-      - ./hass-config:/config
+      - /home/npascual/code/hass/hass-config:/config:rw
+      #- /home/npascual/code/hass/hass-tmp:/tmp:rw
       - /etc/localtime:/etc/localtime:ro
       - /run/dbus:/run/dbus:ro
-      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/run/docker.sock:/var/run/docker.sock:rw
+      - /etc/letsencrypt:/etc/letsencrypt:rw
+      #- /opt/docker/volumes/nginx-rev-proxy/letsencrypt:/etc/letsencrypt;rw
     restart: unless-stopped
-    privileged: true
-    healthcheck:
-      test: 'curl -m 90 -sLf http://localhost:8123 || date >> /config/healthcheck' #| pkill -9 python3'
-      interval: 90s
-      timeout: 60s
-      retries: 2
     network_mode: host
-    user: "1000:1000"
-    depends_on:
-      - mosquitto
+    privileged: true
+
+    extra_hosts:
+      aztec: "192.168.1.101"
+      dark: "192.168.1.100"
+      raspberrypi: "192.168.1.102"
+      alt.pi.hole: "192.168.1.102"
+      pi.hole: "192.168.1.101"
+      hass: "192.168.1.102"
+    #healthcheck:
+      #test: "curl -Lk -fsS https://hass.hawkantsoftware.com:8123 || exit 1"
+      #interval: 3600s
+      #timeout: 60s
+      #retries: 2
+    environment:
+      - DISABLE_JEMALLOC=true
+      - TZ=${TZ}
+    logging:
+      driver: "local"
+
   nodered:
     container_name: nodered
-    image: nodered/node-red
+    hostname: nodered
+    network_mode: bridge
+    restart: unless-stopped
+    image: nodered/node-red:latest
+    logging:
+      driver: "local"
     ports:
       - "1880:1880"
+      - "3456:3456"
     volumes:
-      - ./nodered:/data
-    depends_on:
-      - homeassistant
-      - mosquitto
+      - /home/npascual/code/hass/nodered:/data:rw
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
     environment:
-      TZ: "America/Argentina/Buenos_Aires"
-    restart: unless-stopped
-    user: "1000:1000"
-  mosquitto:
-    image: eclipse-mosquitto
-    container_name: mosquitto
-    restart: unless-stopped
-    ports:
-      - "1883:1883"
-    volumes:
-      - "./mosquitto/config:/mosquitto/config"
-      - "./mosquitto/data:/mosquitto/data"
-      - "./mosquitto/log:/mosquitto/log"
-    environment:
-      TZ: "America/Argentina/Buenos_Aires"
-    user: "1000:1000"
-  hass-configurator:
-    image: "causticlab/hass-configurator-docker:arm"
-    container_name: hass-configurator
-    restart: unless-stopped
-    ports:
-      - "3218:3218/tcp"
-    depends_on:
-      - homeassistant
-    volumes:
-      - "./configurator-config:/config"
-      - "./hass-config:/hass-config"
-    user: "1000:1000"
-  # mariadb:
-  #   image: linuxserver/mariadb
-  #   container_name: mariadb
+      - TZ=${TZ}
+    #user: "${PUID}:${PGID}"
+  # mosquitto:
+  #   image: eclipse-mosquitto:latest
+  #   container_name: mosquitto
+  #   logging:
+  #     driver: "local"
+  #   network_mode: bridge
   #   restart: unless-stopped
-  #   environment:
-  #     MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD}"
-  #     MYSQL_DATABASE: ha_db
-  #     MYSQL_USER: homeassistant
-  #     MYSQL_PASSWORD: "${HA_MYSQL_PASSWORD}"
-  #     PUID: 1000
-  #     PGID: 1000
-  #   volumes:
-  #     - ./mariadb:/config
   #   ports:
-  #     - "3306:3306"
+  #     - "1883:1883"
+  #     - "8883:8883"
+  #   volumes:
+  #     - /home/npascual/code/hass/mosquitto/config:/mosquitto/config
+  #     - /home/npascual/code/hass/mosquitto/data:/mosquitto/data
+  #     - /home/npascual/code/hass/mosquitto/log:/mosquitto/log
+  #     - /etc/letsencrypt:/etc/letsencrypt:ro
+  #   environment:
+  #     - TZ=${TZ}
+  #   #user: "${PUID}:${PGID}"
+
+  # hass-configurator:
+  #   image: "causticlab/hass-configurator-docker:arm"
+  #   container_name: hass-configurator
+  #   logging:
+  #     driver: "local"
+  #   network_mode: bridge
+  #   restart: unless-stopped
+  #   ports:
+  #     - "3218:3218/tcp"
+  #   depends_on:
+  #     - homeassistant
+  #   volumes:
+  #     - /home/npascual/code/hass/configurator-config:/config
+  #     - /home/npascual/code/hass/hass-config:/hass-config
+  #     - /etc/letsencrypt:/etc/letsencrypt
+  #   environment:
+  #     - TZ=${TZ}
+    #user: "${PUID}:${PGID}"
+#networks:
+  #default:
+    #external: true
+    #name: reverse_proxy
